@@ -1,4 +1,4 @@
-'''
+"""
 Created on Mon September  16 2019
 
 @author: danie
@@ -10,54 +10,58 @@ Created on Mon September  16 2019
     
     The ID numbers are saved to a file: 
         "espn_game_ids_(season type)_(start year)-(end year).txt"
-'''
+"""
 
 import urllib3
 from bs4 import BeautifulSoup
 
-#parameters for the scope of the scrape
-start_year = 2017
-end_year = 2018
-season_type = 2     #see season_type_names below
+# parameters for the scope of the scrape
+START_YEAR = 2017
+END_YEAR = 2018
+SEASON_TYPE = 2     #see SEASON_TYPE_NAMES below
 
-#static elements of the urls that are to be looked up. Typical format below:
-#http://www.espn.com/nba/team/schedule/_/name/wsh/season/2016/seasontype/2
-schedule_root = 'http://www.espn.com/nba/team/schedule/_/name/'
-team_abbreviations = ['atl', 'bos', 'bkn', 'cle', 'cha', 'chi', 'dal', 'den', 'det', 'gs', 'hou', 'ind', 'lac', 'lal', 'mem', 'mia', 'mil', 'min', 'no', 'ny', 'okc', 'orl', 'phi', 'phx', 'por', 'sac', 'sa', 'tor', 'utah', 'wsh']
-season_type_names = {1 : 'preseason', 2 : 'regular_season' , 3 : 'postseason'} 
+# static elements of the urls that are to be looked up. Typical format:
+# http://www.espn.com/nba/team/schedule/_/name/wsh/season/2016/seasontype/2
+SCHEDULE_ROOT = 'http://www.espn.com/nba/team/schedule/_/name/'
+TEAM_ABBREVIATIONS = ['atl', 'bos', 'bkn', 'cle', 'cha', 'chi', 'dal', 'den', 
+    'det', 'gs', 'hou', 'ind', 'lac', 'lal', 'mem', 'mia', 'mil', 'min', 'no', 
+    'ny', 'okc', 'orl', 'phi', 'phx', 'por', 'sac', 'sa', 'tor', 'utah', 'wsh']
+SEASON_TYPE_NAMES = {1 : 'preseason', 2 : 'regular_season' , 3 : 'postseason'} 
 
-relative_path = 'Git/data/raw/'
-
-id_file_path = relative_path + 'espn_game_ids_{0}_{1}-{2}.txt'.format(season_type_names[season_type],str(start_year),str(end_year))
+# file path strings
+RELATIVE_PATH = 'Git/data/'
+ID_FILE_PATH = (RELATIVE_PATH
+    + 'raw/' 
+    + 'espn_game_ids_{0}_{1}-{2}.txt'.format(
+        SEASON_TYPE_NAMES[SEASON_TYPE],str(START_YEAR),str(END_YEAR)
+        )
+    )
 
 if __name__ == '__main__':
-    
-    #open up a connection pool
+    # Find ESPN game IDs from the webpages displaying the season schedule of
+    # each team.  Print basic information while looping to monitor progress.
     http = urllib3.PoolManager()
-    
-    #open up a text file to write the game IDs into
-    with open(id_file_path, 'w') as id_file:
-        
-        #feedback to monitor progress while scraping
-        for year in range(start_year,end_year+1):
+
+    with open(ID_FILE_PATH, 'w') as id_file:
+        for year in range(START_YEAR, END_YEAR + 1):
             print(year)
             
-            for team in team_abbreviations:
+            for team in TEAM_ABBREVIATIONS:
                 print(team)
 
-                #get the html from the appropriate url and parse it into a tree 
-                #called 'soup'
-                url = schedule_root + team + '/season/' + str(year) + '/seasontype/' + str(season_type)  
+                url = (SCHEDULE_ROOT 
+                    + team 
+                    + '/season/' 
+                    + str(year) 
+                    + '/seasontype/' 
+                    + str(SEASON_TYPE)
+                    ) 
                 r = http.request('GET', url)
                 soup = BeautifulSoup(r.data, 'html.parser')
                 
-                #each 'a' tag in the tag with class 'ml4' links to a game in the 
-                #season
-                number_of_games_in_season = len(soup.select('.ml4 a'))
+                n_games_in_season = len(soup.select('.ml4 a'))
                 
-                for i in range(number_of_games_in_season):
-
-                    #feedback to monitor progress while scraping
+                for i in range(n_games_in_season):
                     if i == 20:
                         print(i)
                     elif i == 40:
@@ -67,17 +71,18 @@ if __name__ == '__main__':
                     elif i == 80:
                         print(i)
 
-                    #find the tag with the href link to the i^th game
+                    # find the tag with the href link to the i^th game and grab
+                    # the game ID as an integer
                     game_link_tag = soup.select('.ml4 a')[i]
-                    #find the tag with the "vs" or "@" string indicating whether 
-                    #the game was at home or not
-                    location_tag = game_link_tag.parent.parent.previous_sibling
-                    
-                    #grab the game ID as an integer
                     game_id = game_link_tag.get('href')[-9:]
-                    #grab the 'vs' or '@' string
+
+                    # find the tag with the "vs" or "@" string (indicating 
+                    # whether the game was at home or not) and grab that string
+                    location_tag = game_link_tag.parent.parent.previous_sibling
                     game_location = location_tag.select('.pr2')[0].text
                     
+                    # Only write game IDs of home games, to avoid double-
+                    # counting when the schedules of every team are scraped.
                     if game_location == 'vs':
                         id_file.write(game_id + '\n')
                         
