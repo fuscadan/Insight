@@ -76,10 +76,3 @@ if __name__ == '__main__':
             print('problem at game id ' + str(game_id))
 
     labels.to_csv(LABELLED_DATA_PATH)
-
-# problem at game id 400975360
-# problem at game id 400975116
-# problem at game id 400975127
-# problem at game id 400975127
-# problem at game id 400975116
-# problem at game id 400975360

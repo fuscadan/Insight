@@ -22,14 +22,43 @@ game_article_root = 'https://www.espn.com/nba/recap?gameId='
 
 class Game:
     
-    def __init__(self,game_id,df_path=None):
+    def __init__(self,game_id,df_path=None, df=None):
         #cast the given game ID to an int if given as a str
         if type(game_id) == str:
             game_id = int(game_id.strip())
         
-        #if no path to a local data file is given, scrape game info from web
-        if df_path == None:
+                #if a path to a local file is given, load game info from that file
+        if df is not None:
+            game_row = df.loc[game_id]
+            
+            self.headline = game_row['headline']
+            self.summary = game_row['summary']
+            self.article = ast.literal_eval(game_row['article'])
+            self.winner = game_row['winner']            
+            self.names = ast.literal_eval(game_row['names'])
+            self.scores = ast.literal_eval(game_row['scores'])
+            self.quarters = game_row['quarters']
+            self.pts = ast.literal_eval(game_row['pts'])
+            self.reb = ast.literal_eval(game_row['reb'])
+            self.ast = ast.literal_eval(game_row['ast'])
 
+        elif df_path is not None:
+            df = pd.read_csv(df_path, index_col = 0)
+            game_row = df.loc[game_id]
+            
+            self.headline = game_row['headline']
+            self.summary = game_row['summary']
+            self.article = ast.literal_eval(game_row['article'])
+            self.winner = game_row['winner']            
+            self.names = ast.literal_eval(game_row['names'])
+            self.scores = ast.literal_eval(game_row['scores'])
+            self.quarters = game_row['quarters']
+            self.pts = ast.literal_eval(game_row['pts'])
+            self.reb = ast.literal_eval(game_row['reb'])
+            self.ast = ast.literal_eval(game_row['ast'])
+        
+        #if no path to a local data file is given, scrape game info from web
+        else:
             #get the game recap article and store it as a list of strings
 
             #grab the html from the game recap page, eg:
@@ -137,22 +166,7 @@ class Game:
                                    'ast' : int(home_ast_tags[0].select('.value')[0].text),
                                    'to' : int(home_ast_tags[1].select('.value')[0].text),
                                    'min' : int(home_ast_tags[2].select('.value')[0].text)} }
-        
-        #if a path to a local file is given, load game info from that file
-        else:
-            df = pd.read_csv(df_path, index_col = 0)
-            game_row = df.loc[game_id]
-            
-            self.headline = game_row['headline']
-            self.summary = game_row['summary']
-            self.article = ast.literal_eval(game_row['article'])
-            self.winner = game_row['winner']            
-            self.names = ast.literal_eval(game_row['names'])
-            self.scores = ast.literal_eval(game_row['scores'])
-            self.quarters = game_row['quarters']
-            self.pts = ast.literal_eval(game_row['pts'])
-            self.reb = ast.literal_eval(game_row['reb'])
-            self.ast = ast.literal_eval(game_row['ast'])
+
 
     def to_dict(self):
         return {'article' : [self.article] ,
