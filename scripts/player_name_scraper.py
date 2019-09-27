@@ -17,16 +17,17 @@ NAMES_PATH = 'Git/data/raw/nba_player_names.txt'
 
 # connect to each player list page on basketball-reference.com (one page per 
 # letter in the alphabet) and scrape all player names that appear. Add those 
-# names to a set (to avoid duplicates) and write to the file at names_path.
+# names to a set (to avoid duplicates) and write to the file at NAMES_PATH.
 http = urllib3.PoolManager(
     cert_reqs='CERT_REQUIRED',
     ca_certs=certifi.where())
 
-nba_names = set()
-alphabet = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p',
+ALPHABET = ['a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p',
     'q', 'r','s','t','u','v','w','y','z']
 
-for letter in alphabet:
+nba_names = set()
+
+for letter in ALPHABET:
     url = 'https://www.basketball-reference.com/players/' + letter + '/'
     r = http.request('GET' , url)
     soup = BeautifulSoup(r.data, 'html.parser')

@@ -13,11 +13,15 @@ Created on Mon September  16 2019
 """
 
 import urllib3
+import certifi
 from bs4 import BeautifulSoup
 
+# Set RETRYING to True if you're scraping game IDs from 'retries.txt'
+RETRYING = True
+
 # parameters for the scope of the scrape
-START_YEAR = 2017
-END_YEAR = 2018
+START_YEAR = 2003
+END_YEAR = 2009
 SEASON_TYPE = 2     #see SEASON_TYPE_NAMES below
 
 # static elements of the urls that are to be looked up. Typical format:
@@ -33,14 +37,21 @@ RELATIVE_PATH = 'Git/data/'
 ID_FILE_PATH = (RELATIVE_PATH
     + 'raw/' 
     + 'espn_game_ids_{0}_{1}-{2}.txt'.format(
-        SEASON_TYPE_NAMES[SEASON_TYPE],str(START_YEAR),str(END_YEAR)
+        SEASON_TYPE_NAMES[SEASON_TYPE],
+        str(START_YEAR),
+        str(END_YEAR)
         )
     )
+RETRY_PATH = RELATIVE_PATH + 'raw/retries.txt'
 
 if __name__ == '__main__':
     # Find ESPN game IDs from the webpages displaying the season schedule of
     # each team.  Print basic information while looping to monitor progress.
-    http = urllib3.PoolManager()
+    http = urllib3.PoolManager(
+        cert_reqs='CERT_REQUIRED',
+        ca_certs=certifi.where())
+
+    retry = []
 
     with open(ID_FILE_PATH, 'w') as id_file:
         for year in range(START_YEAR, END_YEAR + 1):
@@ -57,6 +68,10 @@ if __name__ == '__main__':
                     + str(SEASON_TYPE)
                     ) 
                 r = http.request('GET', url)
+
+                if r.status != 200:
+                    retry.append(url)
+
                 soup = BeautifulSoup(r.data, 'html.parser')
                 
                 n_games_in_season = len(soup.select('.ml4 a'))
@@ -85,6 +100,10 @@ if __name__ == '__main__':
                     # counting when the schedules of every team are scraped.
                     if game_location == 'vs':
                         id_file.write(game_id + '\n')
+    
+    with open(RETRY_PATH, 'w') as retry_file:
+        for url in retry:
+            retry_file.write(url + '\n')
                         
     
     
